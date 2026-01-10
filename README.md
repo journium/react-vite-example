@@ -71,12 +71,31 @@ yarn dev --port 8080
 pnpm dev -- --port 8080
 ```
 
-Open [http://localhost:8080](http://localhost:8080) in your browser to see the application running.
+## Send Events to Journium from your app
+
+To send events automatically from your running app to Journium:
+
+- Open [http://localhost:8080](http://localhost:8080) in your browser and navigate around various pages.
+- View collected events in your Journium [Dashboard | Events](https://dashboard.journium.app/apps/j_app~/instances/j_app_inst~/developers/events) page.
+
+## Generate sample insights from collected data.
+
+> [!NOTE]
+> When you create an app in Journium, a default [Insight Tracker](https://journium.app/docs/concepts/insight_tracker). You can list trackers for your app in [Dashboard | Insight Tracker](https://dashboard.journium.app/apps/j_app~/instances/j_app_inst~/developers/insight-trackers) is created for you. This is a good starting point to test your data ingestion and insight generation. 
+
+- Go to the tracker listing page for your app at [Dashboard | Insight Tracker](https://dashboard.journium.app/apps/j_app~/instances/j_app_inst~/developers/insight-trackers).
+- Click on the `Analyze now` button for the tracker titled `User Engagment`. This will trigger a job for you to execute the tracker. 
+- You can track jobs in your dashboard at [Dashboard | Jobs](https://dashboard.journium.app/apps/j_app~/instances/j_app_inst~/developers/jobs)
+- Wait for the job to complete. You can view the details of the job by clicking on the job name.
+- Once the job complete successfully, navigate to your application's Insights - [Dashboard | Overview](https://dashboard.journium.app/apps/j_app~/instances/j_app_inst~/overview)
+
+
+Congratulations on creating your first insight successfully!
 
 ## Next Steps
 
 - Explore the codebase to see how Journium is integrated
-- Check out the <a href="https://journium.app/docs/react" target="_blank" rel="noopener noreferrer">Journium documentation</a> for more details
+- Send your own custom events. See <a href="https://journium.app/docs/concepts/events" target="_blank" rel="noopener noreferrer">Journium documentation</a>.
 - Customize this example to build your own application
 
 ## Available Scripts
