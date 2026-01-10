@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useApp } from "@/lib/store";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 import { Loader2 } from "lucide-react";
 
 export default function SignIn() {
@@ -17,6 +17,11 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Track page view
+  useEffect(() => {
+    track(EVENTS.AUTH_SIGNIN_VIEWED);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -25,34 +30,44 @@ export default function SignIn() {
       return;
     }
 
+    track(EVENTS.AUTH_SIGNIN_SUBMITTED, { method: "email" });
     setIsLoading(true);
+    
     try {
       await signIn(email, password);
-      // TODO: Analytics - sign in
-      track(Events.SIGN_IN, { method: "email" });
+      track(EVENTS.AUTH_SIGNIN_SUCCEEDED, { method: "email" });
       toast.success("Welcome back!");
       
       // Check if user has habits, redirect accordingly
       const storedHabits = localStorage.getItem("looply_habits");
       const parsedHabits = storedHabits ? JSON.parse(storedHabits) : [];
       if (parsedHabits.length === 0) {
+        track(EVENTS.ROUTED_TO_ONBOARDING, { source: "signin" });
         navigate("/onboarding");
       } else {
+        track(EVENTS.ROUTED_TO_HOME, { source: "signin" });
         navigate("/home");
       }
     } catch (error) {
+      track(EVENTS.AUTH_SIGNIN_FAILED, { method: "email", error: String(error) });
       toast.error("Sign in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    // TODO: Analytics - sign in with Google
-    track(Events.SIGN_IN, { method: "google" });
+  const handleGoogleSignIn = async () => {
+    track(EVENTS.AUTH_SIGNIN_SUBMITTED, { method: "google" });
     toast.info("Google sign-in is simulated in this demo");
-    signIn("demo@looply.app", "demo");
-    navigate("/onboarding");
+    
+    try {
+      await signIn("demo@looply.app", "demo");
+      track(EVENTS.AUTH_SIGNIN_SUCCEEDED, { method: "google" });
+      track(EVENTS.ROUTED_TO_ONBOARDING, { source: "signin_google" });
+      navigate("/onboarding");
+    } catch (error) {
+      track(EVENTS.AUTH_SIGNIN_FAILED, { method: "google", error: String(error) });
+    }
   };
 
   return (

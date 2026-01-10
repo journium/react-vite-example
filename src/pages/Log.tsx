@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useApp } from "@/lib/store";
 import { CelebrationDialog } from "@/components/CelebrationDialog";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 import { format } from "date-fns";
 import { 
   CheckCircle2,
@@ -38,6 +38,17 @@ export default function Log() {
   const todayLogs = getLogsForDate(today);
   const todayProgress = getTodayProgress();
 
+  // Track page view
+  useEffect(() => {
+    track(EVENTS.LOG_TODAY_VIEWED, {
+      activeHabitsCount: activeHabits.length,
+      completedCount: todayProgress.completed,
+      completionRate: todayProgress.total > 0 
+        ? Math.round((todayProgress.completed / todayProgress.total) * 100) 
+        : 0
+    });
+  }, []);
+
   const isHabitCompleted = (habitId: string) => {
     return todayLogs.some(l => l.habitId === habitId && l.completed);
   };
@@ -49,13 +60,14 @@ export default function Log() {
     
     logHabit(habitId, !isCurrentlyCompleted, value);
     
+    track(EVENTS.HABIT_LOG_TOGGLED, { 
+      habitId, 
+      type: habit?.type,
+      completed: !isCurrentlyCompleted,
+      value 
+    });
+    
     if (!isCurrentlyCompleted) {
-      // TODO: Analytics - habit logged
-      track(Events.HABIT_LOGGED, { 
-        habitId, 
-        type: habit?.type,
-        value 
-      });
       toast.success(`${habit?.title} logged!`, {
         icon: <CheckCircle2 className="h-4 w-4 text-success" />,
       });
@@ -63,6 +75,16 @@ export default function Log() {
   };
 
   const handleCompleteDay = () => {
+    track(EVENTS.DAY_COMPLETED_CLICKED, {
+      completedCount: todayProgress.completed,
+      totalCount: todayProgress.total,
+      allCompleted
+    });
+    
+    if (allCompleted) {
+      track(EVENTS.DAY_COMPLETED_SUCCEEDED);
+    }
+    
     setShowCelebration(true);
   };
 
@@ -177,10 +199,20 @@ export default function Log() {
                         type="number"
                         placeholder={`Enter ${habit.unit}`}
                         value={habitValues[habit.id] || ""}
-                        onChange={(e) => setHabitValues(prev => ({
-                          ...prev,
-                          [habit.id]: Number(e.target.value)
-                        }))}
+                        onChange={(e) => {
+                          const newValue = Number(e.target.value);
+                          setHabitValues(prev => ({
+                            ...prev,
+                            [habit.id]: newValue
+                          }));
+                          
+                          track(EVENTS.HABIT_LOG_VALUE_CHANGED, {
+                            habitId: habit.id,
+                            type: habit.type,
+                            value: newValue,
+                            unit: habit.unit
+                          });
+                        }}
                         className="w-32 h-9"
                       />
                       <span className="text-sm text-muted-foreground">

@@ -3,37 +3,45 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Sparkles, Zap } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { useEffect } from "react";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 
 interface PaywallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger?: 'habit_limit' | 'insights' | 'upgrade_card';
+  trigger?: 'habit_limit' | 'insights' | 'upgrade_card' | string;
 }
 
 export function PaywallDialog({ open, onOpenChange, trigger = 'upgrade_card' }: PaywallDialogProps) {
   const { upgradeToPro } = useApp();
 
+  // Track paywall viewed when opened
+  useEffect(() => {
+    if (open) {
+      track(EVENTS.PAYWALL_VIEWED, { trigger });
+    }
+  }, [open, trigger]);
+
   const handleUpgrade = () => {
-    // TODO: Analytics - paywall upgrade clicked
-    track(Events.PAYWALL_UPGRADE_CLICKED, { trigger });
+    track(EVENTS.UPGRADE_CLICKED, { trigger });
     
     upgradeToPro();
     toast.success("Welcome to Pro! 🎉", {
       description: "You now have access to all premium features.",
     });
     
-    // TODO: Analytics - upgrade success
-    track(Events.UPGRADE_SUCCESS, { trigger });
+    track(EVENTS.UPGRADE_SUCCEEDED, { trigger });
     
     onOpenChange(false);
   };
 
-  // TODO: Analytics - paywall shown
-  if (open) {
-    track(Events.PAYWALL_SHOWN, { trigger });
-  }
+  const handleDismiss = (open: boolean) => {
+    if (!open) {
+      track(EVENTS.PAYWALL_DISMISSED, { trigger });
+    }
+    onOpenChange(open);
+  };
 
   const features = [
     { name: "Active habits", free: "3", pro: "Unlimited" },
@@ -47,7 +55,7 @@ export function PaywallDialog({ open, onOpenChange, trigger = 'upgrade_card' }: 
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDismiss}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader className="text-center pb-2">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary to-orange-400">

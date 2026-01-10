@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useApp } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { Menu, Settings, LogOut, User, Sparkles } from "lucide-react";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 
 interface AppHeaderProps {
   onMenuClick?: () => void;
@@ -26,8 +26,7 @@ export function AppHeader({ onMenuClick, showMenuButton = false }: AppHeaderProp
   const today = format(new Date(), "EEEE, MMMM d");
 
   const handleSignOut = () => {
-    // TODO: Analytics - sign out
-    track(Events.SIGN_OUT);
+    track(EVENTS.AUTH_SIGNOUT);
     signOut();
     navigate("/auth/sign-in");
   };

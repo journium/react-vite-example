@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { useApp } from "@/lib/store";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 import { Loader2 } from "lucide-react";
 
 export default function SignUp() {
@@ -16,6 +16,11 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Track page view
+  useEffect(() => {
+    track(EVENTS.AUTH_SIGNUP_VIEWED);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,11 +35,13 @@ export default function SignUp() {
       return;
     }
 
+    track(EVENTS.AUTH_SIGNUP_SUBMITTED, { method: "email" });
     setIsLoading(true);
+    
     try {
       await signUp(name, email, password);
-      // TODO: Analytics - sign up
-      track(Events.SIGN_UP, { method: "email" });
+      track(EVENTS.AUTH_SIGNUP_SUCCEEDED, { method: "email" });
+      track(EVENTS.ROUTED_TO_ONBOARDING, { source: "signup" });
       toast.success("Account created! Let's set up your habits.");
       navigate("/onboarding");
     } catch (error) {
