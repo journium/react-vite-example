@@ -65,7 +65,7 @@ Open [http://localhost:8080](http://localhost:8080) in your browser to see the a
 ## Next Steps
 
 - Explore the codebase to see how Journium is integrated
-- Check out the [Journium documentation](https://journium.app/docs) for more details
+- Check out the <a href="https://journium.app/docs/react" target="_blank" rel="noopener noreferrer">Journium documentation</a> for more details
 - Customize this example to build your own application
 
 ## Available Scripts
