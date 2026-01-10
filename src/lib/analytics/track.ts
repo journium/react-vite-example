@@ -72,7 +72,7 @@ function getUserPlan(): 'free' | 'pro' | null {
  * @param eventName - The name of the event to track
  * @param props - Optional properties to attach to the event
  */
-export function track(eventName: string, props?: Record<string, any>): void {
+export function track(eventName: string, props?: Record<string, unknown>): void {
   // Check feature flag
   if (!isAnalyticsEnabled()) {
     return;
