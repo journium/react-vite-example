@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/store";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { DashboardSkeleton } from "@/components/SkeletonCard";
+import { track, EVENTS } from "@/lib/events";
 import { format } from "date-fns";
 import { 
   Flame, 
@@ -50,6 +51,14 @@ export default function Home() {
   const todayLogs = getLogsForDate(today);
 
   useEffect(() => {
+    // Track page view
+    track(EVENTS.HOME_VIEWED, {
+      activeHabitsCount: activeHabits.length,
+      completionRate: todayProgress.total > 0 
+        ? Math.round((todayProgress.completed / todayProgress.total) * 100) 
+        : 0
+    });
+    
     // Simulate initial load
     const timer = setTimeout(() => setIsPageLoading(false), 500);
     return () => clearTimeout(timer);
@@ -122,7 +131,10 @@ export default function Home() {
           />
           <Button 
             className="w-full mt-4" 
-            onClick={() => navigate("/log")}
+            onClick={() => {
+              track(EVENTS.HOME_CTA_LOG_CLICKED);
+              navigate("/log");
+            }}
           >
             Log Today's Habits
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -228,7 +240,10 @@ export default function Home() {
         <Card 
           variant="premium" 
           className="p-5 cursor-pointer"
-          onClick={() => setShowPaywall(true)}
+          onClick={() => {
+            track(EVENTS.PAYWALL_TRIGGERED, { source: "home_upgrade_card" });
+            setShowPaywall(true);
+          }}
         >
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-orange-400">

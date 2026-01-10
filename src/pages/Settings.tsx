@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import {
 import { useApp } from "@/lib/store";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS, setAnalyticsEnabled, getAnalyticsEnabled, getCurrentSessionId } from "@/lib/events";
 import { useNavigate } from "react-router-dom";
 import { 
   User, 
@@ -25,7 +25,9 @@ import {
   BellOff, 
   Sparkles, 
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3,
+  Code
 } from "lucide-react";
 
 export default function Settings() {
@@ -35,6 +37,13 @@ export default function Settings() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [analyticsEnabled, setAnalyticsEnabledState] = useState(getAnalyticsEnabled());
+  const [sessionId, setSessionId] = useState(getCurrentSessionId());
+
+  // Track page view
+  useEffect(() => {
+    track(EVENTS.SETTINGS_VIEWED, { plan: user?.plan });
+  }, []);
 
   const handleSaveProfile = () => {
     updateUser({ name, email });
@@ -53,11 +62,24 @@ export default function Settings() {
   };
 
   const handleResetData = () => {
-    // TODO: Analytics - demo data reset
-    track(Events.DEMO_DATA_RESET);
+    track(EVENTS.DEMO_RESET_CONFIRMED);
     resetDemoData();
     toast.success("Demo data cleared");
     navigate("/auth/sign-in");
+  };
+
+  const handleToggleAnalytics = () => {
+    const newValue = !analyticsEnabled;
+    setAnalyticsEnabled(newValue);
+    setAnalyticsEnabledState(newValue);
+    
+    if (newValue) {
+      toast.success("Analytics tracking enabled");
+      // Now that it's enabled, track this action
+      track(EVENTS.SETTINGS_VIEWED, { action: "analytics_enabled" });
+    } else {
+      toast.info("Analytics tracking disabled");
+    }
   };
 
   return (
@@ -130,7 +152,11 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground">
                 You have access to all Pro features including unlimited habits and deep insights.
               </p>
-              <Button variant="outline" disabled>
+              <Button 
+                variant="outline" 
+                disabled
+                onClick={() => track(EVENTS.PLAN_SECTION_VIEWED)}
+              >
                 Manage Subscription (Demo)
               </Button>
             </div>
@@ -139,7 +165,11 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground">
                 Upgrade to Pro for unlimited habits, deep insights, and more.
               </p>
-              <Button onClick={() => setShowPaywall(true)}>
+              <Button onClick={() => {
+                track(EVENTS.PLAN_SECTION_VIEWED);
+                track(EVENTS.PAYWALL_TRIGGERED, { source: "settings_plan" });
+                setShowPaywall(true);
+              }}>
                 Upgrade to Pro
               </Button>
             </div>
@@ -187,6 +217,50 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Analytics Section (Developer) */}
+      <Card className="border-dashed">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                Analytics
+                <Badge variant="secondary" className="text-xs">
+                  <Code className="mr-1 h-3 w-3" />
+                  Dev
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                {analyticsEnabled ? "Tracking enabled" : "Tracking disabled"}
+              </CardDescription>
+            </div>
+            <Switch
+              checked={analyticsEnabled}
+              onCheckedChange={handleToggleAnalytics}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Enable analytics tracking to monitor events. Open your browser console to see tracked events.
+          </p>
+          <div className="rounded-md bg-secondary/50 p-3 font-mono text-xs space-y-1">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Status:</span>
+              <span className={analyticsEnabled ? "text-success" : "text-muted-foreground"}>
+                {analyticsEnabled ? "Enabled" : "Disabled"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Session ID:</span>
+              <span className="text-foreground truncate ml-2">{sessionId}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Danger Zone */}
       <Card className="border-destructive/50">
         <CardHeader>
@@ -206,7 +280,10 @@ export default function Settings() {
           </p>
           <Button 
             variant="destructive" 
-            onClick={() => setShowResetDialog(true)}
+            onClick={() => {
+              track(EVENTS.DEMO_RESET_CLICKED);
+              setShowResetDialog(true);
+            }}
           >
             Reset Demo Data
           </Button>

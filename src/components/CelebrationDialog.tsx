@@ -1,6 +1,8 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { track, EVENTS } from "@/lib/events";
 import { Sparkles, TrendingUp, PartyPopper } from "lucide-react";
 
 interface CelebrationDialogProps {
@@ -14,7 +16,19 @@ export function CelebrationDialog({ open, onOpenChange, completedCount, totalCou
   const navigate = useNavigate();
   const isFullCompletion = completedCount === totalCount;
 
+  // Track dialog shown
+  useEffect(() => {
+    if (open) {
+      track(EVENTS.DAY_COMPLETION_DIALOG_SHOWN, {
+        completedCount,
+        totalCount,
+        isFullCompletion
+      });
+    }
+  }, [open, completedCount, totalCount, isFullCompletion]);
+
   const handleViewInsights = () => {
+    track(EVENTS.DAY_COMPLETION_VIEW_INSIGHTS_CLICKED);
     onOpenChange(false);
     navigate("/insights");
   };

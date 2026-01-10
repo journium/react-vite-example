@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/lib/store";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { InsightsSkeleton } from "@/components/SkeletonCard";
+import { track, EVENTS } from "@/lib/events";
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, parseISO } from "date-fns";
 import { 
   ChevronLeft,
@@ -29,13 +30,41 @@ export default function Insights() {
   const isPro = user?.plan === "pro";
 
   useEffect(() => {
+    // Track page view
+    track(EVENTS.INSIGHTS_VIEWED, {
+      weekStart: format(weekStart, "yyyy-MM-dd"),
+      isCurrentWeek,
+      completionRate: Math.round(insights.completionRate),
+      plan: user?.plan
+    });
+    
+    // Track pro insights locked view for free users
+    if (!isPro) {
+      track(EVENTS.PRO_INSIGHTS_LOCKED_VIEWED);
+    }
+    
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
   }, [weekStart]);
 
-  const goToPreviousWeek = () => setWeekStart(subWeeks(weekStart, 1));
-  const goToNextWeek = () => setWeekStart(addWeeks(weekStart, 1));
+  const goToPreviousWeek = () => {
+    const newWeekStart = subWeeks(weekStart, 1);
+    setWeekStart(newWeekStart);
+    track(EVENTS.INSIGHTS_WEEK_CHANGED, { 
+      direction: "previous",
+      weekStart: format(newWeekStart, "yyyy-MM-dd")
+    });
+  };
+  
+  const goToNextWeek = () => {
+    const newWeekStart = addWeeks(weekStart, 1);
+    setWeekStart(newWeekStart);
+    track(EVENTS.INSIGHTS_WEEK_CHANGED, { 
+      direction: "next",
+      weekStart: format(newWeekStart, "yyyy-MM-dd")
+    });
+  };
   
   const isCurrentWeek = format(weekStart, "yyyy-MM-dd") === format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
@@ -222,7 +251,10 @@ export default function Insights() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Get personalized tips and detailed analytics
                 </p>
-                <Button onClick={() => setShowPaywall(true)}>
+                <Button onClick={() => {
+                  track(EVENTS.PAYWALL_TRIGGERED, { source: "insights_locked" });
+                  setShowPaywall(true);
+                }}>
                   Upgrade to Pro
                 </Button>
               </div>

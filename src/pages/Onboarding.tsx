@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/store";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 import { 
   Moon, 
   Dumbbell, 
@@ -53,23 +53,29 @@ export default function Onboarding() {
   const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
-  // TODO: Analytics - onboarding step viewed
-  const handleStepView = (stepNum: number) => {
-    track(Events.ONBOARDING_STEP_VIEWED, { step: stepNum });
-  };
+  // Track initial view
+  useEffect(() => {
+    track(EVENTS.ONBOARDING_STEP_VIEWED, { step: 1, stepName: "goal" });
+  }, []);
 
   const handleGoalSelect = (goalId: string) => {
     setSelectedGoal(goalId);
-    // TODO: Analytics - goal selected
-    track(Events.ONBOARDING_GOAL_SELECTED, { goal: goalId });
+    track(EVENTS.ONBOARDING_GOAL_SELECTED, { goal: goalId });
   };
 
   const toggleHabit = (habitId: string) => {
+    const isAdding = !selectedHabits.includes(habitId);
     setSelectedHabits(prev => 
       prev.includes(habitId)
         ? prev.filter(h => h !== habitId)
         : prev.length < 3 ? [...prev, habitId] : prev
     );
+    
+    track(EVENTS.ONBOARDING_HABIT_TOGGLED, { 
+      habitId, 
+      action: isAdding ? "add" : "remove",
+      count: isAdding ? selectedHabits.length + 1 : selectedHabits.length - 1
+    });
   };
 
   const handleAddCustomHabit = () => {
@@ -86,12 +92,12 @@ export default function Onboarding() {
     });
     
     if (allowed) {
-      // TODO: Analytics - notifications allowed
-      track(Events.NOTIFICATION_PERMISSION_ALLOWED);
+      track(EVENTS.NOTIFICATION_PERMISSION_PROMPT_ACCEPTED);
+      track(EVENTS.ONBOARDING_REMINDER_SET, { reminderTime });
       toast.success("Reminders enabled!");
     } else {
-      // TODO: Analytics - notifications denied
-      track(Events.NOTIFICATION_PERMISSION_DENIED);
+      track(EVENTS.NOTIFICATION_PERMISSION_PROMPT_DISMISSED);
+      track(EVENTS.ONBOARDING_REMINDER_SKIPPED);
     }
     
     handleComplete();
@@ -108,8 +114,7 @@ export default function Onboarding() {
           frequency: "daily",
           active: true,
         });
-        // TODO: Analytics - habit created
-        track(Events.HABIT_CREATED, { type: "custom", title });
+        track(EVENTS.HABIT_CREATED, { type: "custom", title, source: "onboarding" });
       } else {
         const template = habitTemplates.find(t => t.id === habitId);
         if (template) {
@@ -121,18 +126,17 @@ export default function Onboarding() {
             unit: template.unit,
             active: true,
           });
-          // TODO: Analytics - habit created
-          track(Events.HABIT_CREATED, { type: template.type, title: template.title });
+          track(EVENTS.HABIT_CREATED, { type: template.type, title: template.title, source: "onboarding" });
         }
       }
     });
 
     updateUser({ hasCompletedOnboarding: true });
     
-    // TODO: Analytics - onboarding completed
-    track(Events.ONBOARDING_COMPLETED, { 
+    track(EVENTS.ONBOARDING_COMPLETED, { 
       goal: selectedGoal, 
-      habitsCount: selectedHabits.length 
+      habitsCount: selectedHabits.length,
+      hasCustomHabits: selectedHabits.some(h => h.startsWith("custom:"))
     });
     
     toast.success("You're all set! Let's start logging!");
@@ -141,8 +145,21 @@ export default function Onboarding() {
 
   const nextStep = () => {
     if (step < totalSteps) {
-      setStep(step + 1);
-      handleStepView(step + 1);
+      // Track completion of current step
+      const stepNames = ["goal", "habits", "reminder", "notifications"];
+      track(EVENTS.ONBOARDING_STEP_COMPLETED, { 
+        step, 
+        stepName: stepNames[step - 1] 
+      });
+      
+      const nextStepNum = step + 1;
+      setStep(nextStepNum);
+      
+      // Track view of next step
+      track(EVENTS.ONBOARDING_STEP_VIEWED, { 
+        step: nextStepNum, 
+        stepName: stepNames[nextStepNum - 1] 
+      });
     }
   };
 

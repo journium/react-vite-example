@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import {
 import { useApp } from "@/lib/store";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { toast } from "sonner";
-import { track, Events } from "@/lib/events";
+import { track, EVENTS } from "@/lib/events";
 import { 
   Plus, 
   MoreVertical,
@@ -75,6 +75,15 @@ export default function Habits() {
   const activeHabits = habits.filter(h => h.active);
   const archivedHabits = habits.filter(h => !h.active);
 
+  // Track page view
+  useEffect(() => {
+    track(EVENTS.HABITS_VIEWED, {
+      activeCount: activeHabits.length,
+      archivedCount: archivedHabits.length,
+      plan: user?.plan
+    });
+  }, []);
+
   const resetForm = () => {
     setTitle("");
     setType("custom");
@@ -84,10 +93,15 @@ export default function Habits() {
   };
 
   const handleOpenAddDialog = () => {
+    track(EVENTS.HABIT_ADD_CLICKED);
+    
     if (!canAddMoreHabits()) {
+      track(EVENTS.PAYWALL_TRIGGERED, { source: "habit_limit_reached" });
       setShowPaywall(true);
       return;
     }
+    
+    track(EVENTS.HABIT_ADD_DIALOG_OPENED);
     resetForm();
     setShowAddDialog(true);
   };
@@ -117,6 +131,11 @@ export default function Habits() {
         target: target ? Number(target) : undefined,
         unit: unit || undefined,
       });
+      track(EVENTS.HABIT_UPDATED, { 
+        habitId: editingHabit, 
+        type, 
+        hasTarget: !!target 
+      });
       toast.success("Habit updated!");
     } else {
       addHabit({
@@ -127,8 +146,12 @@ export default function Habits() {
         unit: unit || undefined,
         active: true,
       });
-      // TODO: Analytics - habit created
-      track(Events.HABIT_CREATED, { type, title: title.trim() });
+      track(EVENTS.HABIT_CREATED, { 
+        type, 
+        title: title.trim(), 
+        hasTarget: !!target,
+        source: "habits_page" 
+      });
       toast.success("Habit created!");
     }
 
@@ -137,18 +160,29 @@ export default function Habits() {
   };
 
   const handleArchive = (habitId: string) => {
+    const habit = habits.find(h => h.id === habitId);
     archiveHabit(habitId);
-    // TODO: Analytics - habit archived
-    track(Events.HABIT_ARCHIVED, { habitId });
+    track(EVENTS.HABIT_ARCHIVED, { 
+      habitId, 
+      type: habit?.type,
+      title: habit?.title 
+    });
     toast.success("Habit archived");
   };
 
   const handleReactivate = (habitId: string) => {
     if (!canAddMoreHabits()) {
+      track(EVENTS.PAYWALL_TRIGGERED, { source: "habit_reactivate_limit" });
       setShowPaywall(true);
       return;
     }
+    const habit = habits.find(h => h.id === habitId);
     updateHabit(habitId, { active: true });
+    track(EVENTS.HABIT_REACTIVATED, { 
+      habitId, 
+      type: habit?.type,
+      title: habit?.title 
+    });
     toast.success("Habit reactivated!");
   };
 
