@@ -54,22 +54,22 @@ pnpm install
 
 4. **Create a `.env` file** in the project root:
 
-```bash
-touch .env
-```
+    ```bash
+    touch .env
+    ```
 
 5. **Add your key** to the `.env` file:
 
-```bash
-VITE_JOURNIUM_PUBLISHABLE_KEY=your_publishable_key_here
-```
+    ```bash
+    VITE_JOURNIUM_PUBLISHABLE_KEY=your_publishable_key_here
+    ```
 
 6. **Verify your setup** - check that the key is correctly saved:
 
-```bash
-cat .env
-# Should show: VITE_JOURNIUM_PUBLISHABLE_KEY=pk_test_...
-```
+    ```bash
+    cat .env
+    # Should show: VITE_JOURNIUM_PUBLISHABLE_KEY=pk_test_...
+    ```
 
    > **Important:** Development instances use `pk_test_` keys. Production keys start with `pk_live_`.
 
