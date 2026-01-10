@@ -76,7 +76,7 @@ pnpm install
 ### 4. Run the Development Server
 
 ```bash
-# Start the development server (default port 8080)
+# Start the development server (default port 5173)
 bun run dev
 # or
 npm run dev
@@ -86,7 +86,7 @@ yarn dev
 pnpm dev
 ```
 
-The server will start at **http://localhost:8080**
+The server will start at **http://localhost:5173**
 
 <details>
 <summary>Using a custom port?</summary>
@@ -101,7 +101,7 @@ yarn dev --port 3000  # Note: yarn doesn't use -- before flags
 
 ### 5. Verify Your Setup
 
-Open [http://localhost:8080](http://localhost:8080) in your browser to see the Looply app running.
+Open [http://localhost:5173](http://localhost:5173) in your browser to see the Looply app running.
 
 ### 6. Send Events to Journium
 
