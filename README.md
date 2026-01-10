@@ -7,9 +7,8 @@ This repository demonstrates Journium integration for **React + Vite**. Use this
 
 ## Prerequisites
 
-- Node.js 18+ installed
-- Bun package manager (recommended) or npm/yarn/pnpm
-- A Journium account (sign up at [https://journium.app/signup](https://journium.app/signup))
+- Node.js 18+ installed [TODO: Verify minimal node version and supply here]
+- [Bun package manager](https://bun.com/) (recommended) or npm/yarn/pnpm
 
 ## Getting Started
 
@@ -32,15 +31,15 @@ yarn install
 pnpm install
 ```
 
-### 3. Set Up Journium
+### 3. Set your Journium Publishable Key
 
 1. **Sign up for a Journium account** at [https://journium.app/signup](https://journium.app/signup)
 
 2. **Create an application named "Looply"** in your Journium dashboard
 
-3. **Get your publishable key** from the application settings in your Journium dashboard
+3. Copy your Publishable Key from the [Developers | API Keys](https://dashboard.journium.app/apps/j_app~/instances/j_app_inst~/developers/api-keys) section.
 
-4. **Create a `.env` file** in the root of this project and add your publishable key:
+4. Paste your key into your `.env` or `.env.local` file.
 
 ```bash
 VITE_JOURNIUM_PUBLISHABLE_KEY=your_publishable_key_here
@@ -49,6 +48,7 @@ VITE_JOURNIUM_PUBLISHABLE_KEY=your_publishable_key_here
 ### 4. Run the Development Server
 
 ```bash
+# Start the development server (default port 5173)
 bun run dev
 # or
 npm run dev
@@ -58,7 +58,18 @@ yarn dev
 pnpm dev
 ```
 
-To use a custom port, modify the `server.port` setting in `vite.config.ts`.
+To use a custom port, specify it with the `-p` flag:
+
+```bash
+# To run on a specific port (e.g., 8080), use:
+bun run dev -- --port 8080
+# or
+npm run dev -- --port 8080
+# or
+yarn dev --port 8080
+# or
+pnpm dev -- --port 8080
+```
 
 Open [http://localhost:8080](http://localhost:8080) in your browser to see the application running.
 
